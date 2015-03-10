@@ -1,4 +1,9 @@
-﻿using Sandbox.Common;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Sandbox.Common;
 using Sandbox.Common.Components;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Definitions;
@@ -6,16 +11,6 @@ using Sandbox.Engine;
 using Sandbox.Game;
 using Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
-using System;
-using System;
-using System.Collections.Generic;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq;
-using System.Text;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading.Tasks;
 
 namespace MMApi
 {
@@ -24,7 +19,7 @@ namespace MMApi
         IMyGridTerminalSystem GridTerminalSystem;
 
         /* [h1]Configurable Automatic LCDs[/h1] 
-v:0.97 
+v:0.971
 In-game script by MMaster 
  
 [b]Manages multiple LCDs based on commands written in LCD public title. 
@@ -285,77 +280,6 @@ Rhedd - for his contribution to modded items entries
         }
     }
 
-    public class DBlockCollection : MMBlockCollection {
-        
-        public override List<double> GetDetailedInfoValues(IMyTerminalBlock block, string name = null)
-        {
-            List<double> result = new List<double>();
-
-            string di = block.DetailedInfo;
-            string[] attr_lines = block.DetailedInfo.Split('\n');
-
-            for (int i = 0; i < attr_lines.Length; i++)
-            {
-                string[] parts = attr_lines[i].Split(':');
-                if (parts.Length < 2)
-                {
-                    // broken line (try German) 
-                    parts = attr_lines[i].Split('r');
-                }
-
-                string[] val_parts = parts[1].Trim().Split(' ');
-                string str_val = val_parts[0];
-                char str_unit = '.';
-                if (val_parts.Length > 1)
-                    str_unit = val_parts[1][0];
-
-                double val = 0;
-                double final_val = 0;
-                if (Double.TryParse(str_val, out val))
-                {
-                    final_val = val * Math.Pow(1000.0, ".kMGTPEZY".IndexOf(str_unit));
-                    result.Add(final_val);
-                }
-
-                if (parts[0].Equals(name))
-                {
-                    break;
-                }
-            }
-
-            return result;
-        }
-
-        public override double GetPowerOutput(out double current, out double max)
-        {
-            max = 0;
-            current = 0;
-
-            for (int i = 0; i < Blocks.Count; i++)
-            {
-                //    List<double> vals = GetDetailedInfoValues(Blocks[i]);
-                //    if (vals.Count < 2)
-                //        continue;
-
-                //    max += vals[0];
-                //    current += vals[1];
-
-                List<double> vals = GetDetailedInfoValues(Blocks[i], "Current Output");
-                if (vals.Count == 1)
-                {
-                    current = vals[0];
-                }
-                vals = GetDetailedInfoValues(Blocks[i], "Max Output");
-                if (vals.Count == 1)
-                {
-                    max = vals[0];
-                }
-            }
-
-            return MM.GetPercent(current, max);
-        }
-    } 
-
     public static class MMItems
     {
         public static Dictionary<string, MMItem> items = new Dictionary<string, MMItem>();
@@ -541,7 +465,7 @@ Rhedd - for his contribution to modded items entries
         // number of panels processed in one step 
         public static int PANELS_PER_STEP = 2;
 
-        public MMBlockCollection textPanels = new DBlockCollection();
+        public MMBlockCollection textPanels = new MMBlockCollection();
 
         public LCDsProgram(string nameLike, int sps, int pps)
         {
@@ -626,7 +550,7 @@ Rhedd - for his contribution to modded items entries
         {
             bool enabledCnt = (cmd.command == "enabledcount");
             bool producingCnt = (cmd.command == "prodcount");
-            MMBlockCollection blocks = new DBlockCollection();
+            MMBlockCollection blocks = new MMBlockCollection();
             if (cmd.arguments.Count == 0)
                 blocks.Blocks = MM._GridTerminalSystem.Blocks;
 
@@ -642,7 +566,7 @@ Rhedd - for his contribution to modded items entries
                     MMBlockCollection f_blocks = blocks;
                     if (cmd.nameLike != "" && cmd.nameLike != "*")
                     {
-                        f_blocks = new DBlockCollection();
+                        f_blocks = new MMBlockCollection();
                         blocks.GetBlocksWithNameLike(f_blocks, cmd.nameLike);
                     }
 
@@ -707,7 +631,7 @@ Rhedd - for his contribution to modded items entries
 
         public void RunWorkingList(IMyTextPanel panel, MMCommand cmd)
         {
-            MMBlockCollection blocks = new DBlockCollection();
+            MMBlockCollection blocks = new MMBlockCollection();
             if (cmd.arguments.Count == 0)
                 blocks.Blocks = MM._GridTerminalSystem.Blocks;
 
@@ -723,7 +647,7 @@ Rhedd - for his contribution to modded items entries
                     MMBlockCollection f_blocks = blocks;
                     if (cmd.nameLike != "" && cmd.nameLike != "*")
                     {
-                        f_blocks = new DBlockCollection();
+                        f_blocks = new MMBlockCollection();
                         blocks.GetBlocksWithNameLike(f_blocks, cmd.nameLike);
                     }
 
@@ -777,12 +701,14 @@ Rhedd - for his contribution to modded items entries
 
         public void RunDamage(IMyTextPanel panel, MMCommand cmd)
         {
-            MMBlockCollection blocks = new DBlockCollection();
+            MMBlockCollection blocks = new MMBlockCollection();
 
             if (cmd.nameLike == "" || cmd.nameLike == "*")
                 blocks.Blocks = MM._GridTerminalSystem.Blocks;
             else
                 blocks.AddBlocksOfNameLike(cmd.nameLike);
+
+            bool found = false;
 
             MMList<IMySlimBlock> slims = blocks.GetSlimBlocks();
             for (int i = 0; i < slims.Count; i++)
@@ -793,6 +719,7 @@ Rhedd - for his contribution to modded items entries
                 if (perc >= 100)
                     continue;
 
+                found = true;
                 MMLCDTextManager.Add(panel, slim.FatBlock.DisplayNameText + " ");
                 MMLCDTextManager.AddRightAlign(panel, MM.FormatLargeNumber(slim.BuildIntegrity) + " / ",
                     LCD_LINE_DMG_NUMBERS_POS);
@@ -802,11 +729,14 @@ Rhedd - for his contribution to modded items entries
                 MMLCDTextManager.AddProgressBar(panel, perc, FULL_PROGRESS_CHARS);
                 MMLCDTextManager.AddLine(panel, "");
             }
+
+            if (!found)
+                MMLCDTextManager.AddLine(panel, "No damaged blocks found.");
         }
 
         public void RunCargoStatus(IMyTextPanel panel, MMCommand cmd)
         {
-            MMBlockCollection blocks = new DBlockCollection();
+            MMBlockCollection blocks = new MMBlockCollection();
 
             if (cmd.nameLike == "" || cmd.nameLike == "*")
                 blocks.AddBlocksOfType(MM.CargoContainer);
@@ -882,9 +812,9 @@ Rhedd - for his contribution to modded items entries
 
         public void RunPowerStatus(IMyTextPanel panel, MMCommand cmd)
         {
-            MMBlockCollection reactors = new DBlockCollection();
-            MMBlockCollection solars = new DBlockCollection();
-            MMBlockCollection batteries = new DBlockCollection();
+            MMBlockCollection reactors = new MMBlockCollection();
+            MMBlockCollection solars = new MMBlockCollection();
+            MMBlockCollection batteries = new MMBlockCollection();
             int got = 0;
             bool issummary = (cmd.command == "powersummary");
 
@@ -929,7 +859,7 @@ Rhedd - for his contribution to modded items entries
             if (got == 1)
                 return;
 
-            MMBlockCollection blocks = new DBlockCollection();
+            MMBlockCollection blocks = new MMBlockCollection();
             blocks.AddFromCollection(reactors);
             blocks.AddFromCollection(solars);
             blocks.AddFromCollection(batteries);
@@ -1035,7 +965,7 @@ Rhedd - for his contribution to modded items entries
 
         public void RunInvListing(IMyTextPanel panel, MMCommand cmd)
         {
-            MMBlockCollection blocks = new DBlockCollection();
+            MMBlockCollection blocks = new MMBlockCollection();
             bool missing = (cmd.command == "missing");
             bool simple = (cmd.command == "invlist");
 
@@ -1293,7 +1223,7 @@ Rhedd - for his contribution to modded items entries
             return MM.GetPercent(usedAmount, totalAmount);
         }
 
-        public virtual List<double> GetDetailedInfoValues(IMyTerminalBlock block, string name = null)
+        public List<double> GetDetailedInfoValues(IMyTerminalBlock block)
         {
             List<double> result = new List<double>();
 
@@ -1322,41 +1252,25 @@ Rhedd - for his contribution to modded items entries
                     final_val = val * Math.Pow(1000.0, ".kMGTPEZY".IndexOf(str_unit));
                     result.Add(final_val);
                 }
-
-                if (parts[0].Equals(name))
-                {
-                    break;
-                }
             }
 
             return result;
         }
 
-        public virtual double GetPowerOutput(out double current, out double max)
+        public double GetPowerOutput(out double current, out double max)
         {
             max = 0;
             current = 0;
 
             for (int i = 0; i < Blocks.Count; i++)
             {
-            //    List<double> vals = GetDetailedInfoValues(Blocks[i]);
-            //    if (vals.Count < 2)
-            //        continue;
+                List<double> vals = GetDetailedInfoValues(Blocks[i]);
+                if (vals.Count < 2)
+                    continue;
 
-            //    max += vals[0];
-            //    current += vals[1];
-
-                List<double> vals = GetDetailedInfoValues(Blocks[i], "Current Output");
-                if( vals.Count == 1 ){
-                    current = vals[0];
-                }
-                vals = GetDetailedInfoValues(Blocks[i], "Max Output");
-                if (vals.Count == 1)
-                {
-                    max = vals[0];
-                }
+                max += vals[0];
+                current += vals[1];
             }
-            
             return MM.GetPercent(current, max);
         }
 
@@ -2084,7 +1998,7 @@ Rhedd - for his contribution to modded items entries
             _GridTerminalSystem = gridSystem;
             EnableDebug = _EnableDebug;
 
-            _DebugTextPanels = new DBlockCollection();
+            _DebugTextPanels = new MMBlockCollection();
 
             MMStringFunc.InitCharSizes();
 
@@ -2396,7 +2310,7 @@ Rhedd - for his contribution to modded items entries
                                                                                                                                                                                                     _GridTerminalSystem.GetBlocksOfType<IMyCameraBlock>(blocks);
                                                                                                                                                                                                 else
                                                                                                                                                                                                     if (type == OreDetector || typeInStr.EndsWith("detector"))
-                                                                                                                                                                                                        _GridTerminalSystem.GetBlocksOfType<IMyOreDetector>(blocks); _GridTerminalSystem.GetBlocksOfType<IMyOreDetector>(blocks);
+                                                                                                                                                                                                        _GridTerminalSystem.GetBlocksOfType<IMyOreDetector>(blocks);
         }
 
         public static string FormatLargeNumber(double number, bool compress = true)
@@ -2864,7 +2778,76 @@ Rhedd - for his contribution to modded items entries
                 }
             }
             return false;
-        } 
-
+        }
     }
+
+    public class DBlockCollection : MMBlockCollection {
+        
+        public override List<double> GetDetailedInfoValues(IMyTerminalBlock block, string name = null)
+        {
+            List<double> result = new List<double>();
+
+            string di = block.DetailedInfo;
+            string[] attr_lines = block.DetailedInfo.Split('\n');
+
+            for (int i = 0; i < attr_lines.Length; i++)
+            {
+                string[] parts = attr_lines[i].Split(':');
+                if (parts.Length < 2)
+                {
+                    // broken line (try German) 
+                    parts = attr_lines[i].Split('r');
+                }
+
+                string[] val_parts = parts[1].Trim().Split(' ');
+                string str_val = val_parts[0];
+                char str_unit = '.';
+                if (val_parts.Length > 1)
+                    str_unit = val_parts[1][0];
+
+                double val = 0;
+                double final_val = 0;
+                if (Double.TryParse(str_val, out val))
+                {
+                    final_val = val * Math.Pow(1000.0, ".kMGTPEZY".IndexOf(str_unit));
+                    result.Add(final_val);
+                }
+
+                if (parts[0].Equals(name))
+                {
+                    result.Clear();
+                    result.Add(final_val);
+                    return result;
+                }
+            }
+
+            return result;
+        }
+
+        public override double GetPowerOutput(out double current, out double max)
+        {
+            max = 0;
+            current = 0;
+
+            for (int i = 0; i < Blocks.Count; i++)
+            {
+                List<double> vals = GetDetailedInfoValues(Blocks[i], "Current Output");
+                MM.Debug("current output : " + vals);
+                if (vals.Count == 1)
+                {
+                    current += vals[0];
+                }
+                vals = GetDetailedInfoValues(Blocks[i], "Max Output");
+                if (vals.Count == 1)
+                {
+                    max += vals[0];
+                }
+            }
+
+            return MM.GetPercent(current, max);
+        }
+
+    } 
+
+    
 }
