@@ -12,250 +12,17 @@ using Sandbox.Game;
 using Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
 
-namespace MMApi
+/*
+ * In-game script by MMaster 
+ * http://steamcommunity.com/sharedfiles/filedetails/?id=403921671
+ */
+
+namespace MMasterAPI
 {
     public class ScriptMain
     {
         IMyGridTerminalSystem GridTerminalSystem;
 
-        /* [h1]Configurable Automatic LCDs[/h1] 
-v:0.971
-In-game script by MMaster 
- 
-[b]Manages multiple LCDs based on commands written in LCD public title. 
-- Automatic LCD scrolling up and down! 
-- Filter blocks by name for all commands 
-- Filtered inventory items listing & missing items listing 
-- Reactor, solar & battery power stats 
-- Damaged blocks list with progress bars! 
-- Cargo space stats 
-- Block count stats 
-- Producing & Idle blocks summary / list 
-- Enabled blocks summary / list 
-- Time 
-- Custom LCD lines 
-- Displays nicely formatted text with progress bars! 
-- Multiple commands in single LCDs! 
- 
-NO PROGRAMMING NEEDED.[/b] Just load the script based on instructions and you are done! 
- 
-[h1]QUICK GUIDE[/h1] 
-1. Load this script to programmable block 
-2. Build timer block, set it to 1 second 
-3. Setup timer block actions: 1. Run program block 2. Start timer 
-4. Start timer 
-5. Build few LCD panels (or text panels) 
-6. Name the LCDs however you like just add [LCD] to the end of name  
-(e.g Text panel [LCD]) 
-7. Set Font Size to 0.8 
-8. Set LCDs public title to one of: 
-[i]Inventory * +ingot[/i] 
-- shows all ingots on ship/station 
-[i]Inventory * +component[/i] 
-- shows all components on ship/station 
-[i]Missing * +component[/i] 
-- shows missing components on ship/station 
-[i]Power;echo;BlockCount * reactor;echo;Cargo[/i] 
-- shows power stats and empty line,  
-reactor count, empty line and cargo stats 
-Note: Look at [b]COMMANDS section below for more detailed explanation[/b] 
-9. LCD panels now show whatever you told them to 
- 
- 
-[h1]COMMANDS GUIDE[/h1] 
-All commands usually work without entering any arguments. 
-More commands are separated using [b];[/b] 
-e.g: [i]Time Base Stats - Time: ;echo;Power;echo;Cargo;[/i] 
-(display text following with current time;next line; 
-show power stats;next line;show cargo stats) 
-You can specify filters and other things by using command arguments. 
-Each argument is just one word 
- 
-First argument usually specifies filter for name of blocks 
-* means all blocks 
-e.g: [i]Inventory * +ingot[/i] 
-(this will show all ingots from all blocks) 
-or: [i]Inventory Storage +component[/i] 
-(this will show components from blocks which have Storage in name) 
-or: [i]Inventory [CARGO] +ingot[/i] 
-(this will show ingots from blocks which have [CARGO] (including [ ]) in name) 
- 
-Enter multiple words in single argument by using { and } 
-e.g.: [i]Inventory {My Cargo Container}[/i] 
-(this will show whole inventory of blocks which have 
-"My Cargo Container" (without quotes) in name) 
- 
- 
-[h1]COMMAND: Inventory[/h1] 
-Displays inventory summary for certain item types 
-FONT SIZE 0.8! 
- 
-No arguments: displays all items on current ship/station.      
-First argument: filters blocks based on name 
-Following arguments: specify included/excluded item types and quotas 
- 
-[b]Item type and quota specification:[/b] 
-Operator + or - adds or removes items from display 
-[b]+all[/b] adds all item types to display  
-[b]-ore[/b] removes ores from all items already added 
- * You need to add something for [b]-[/b] operator to work! 
-[b]Use main types in specification:[/b] 
-ore (all ores) 
-ingot (all ingots) 
-component (all components) 
-ammo (all ammo boxes) 
-tool (all tools + hand guns) 
-[b]Or sub types:[/b] 
-iron (both ore and ingot), gold, nickel, platinum, etc 
-steelplate, construction, thrust, reactor, etc 
-[b]Or both:[/b] 
-ingot/iron (only iron ingots), ingot/uranium (only uranium) 
-[b]You can combine that like this:[/b] 
-+ingot/iron,gold (add iron and gold ingots) 
-+ingot,component (add ingots and components) 
-+steelplate,construction (steelplates and construction components) 
-[b]To override progress bar quotas:[/b] 
-+ingot:10000  
-(adds all ingots with all of them having max progress bar value 10000) 
-+component:1000 +steelplate:10000,construction:9000 
-(adds all components with quota 1000,  
-overrides steelplate and construction components with different quotas) 
- 
-[b]Example usages:[/b] 
-Inventory {Ingot Storage} +ingot:30000 
-Inventory [STORAGE] +component 
-Inventory Container +all -tool -ammo 
-Inventory BlocksName +ingot:1000 +component 
- 
-[h1]COMMAND: InvList[/h1] 
-Same as Inventory, but does not display categories headers. 
-FONT SIZE 0.8! 
- 
-[h1]COMMAND: Missing[/h1] 
-Displays items which are low in stock (lower than set quota) 
-FONT SIZE 0.8! 
- 
-Default quota is 1. 
-Works the same way as Inventory command.      
- 
-No arguments: displays all missing items on ship/station. 
-First argument: filters blocks based on name 
-Following arguments: specify included/excluded item types and quotas 
- 
-[b]Example:[/b] 
-Missing [STORAGE] +component:50 +ingot:100 +ammo:10 
- 
-[h1]COMMAND: Cargo[/h1] 
-Displays cargo space of specified blocks 
-UP TO FONT SIZE 1.0 (scrolling only on 0.8) 
- 
-No arguments: all blocks on ship/station 
-First argument: filters blocks based on name 
- 
-[b]Example:[/b] 
-Cargo {Red Cargo} 
- 
-[h1]COMMAND: Power[/h1] 
-Displays power statistics for specified blocks 
-Automatically separates reactors, solar panels and batteries 
-Shows total power stats when more power sources are present 
-UP TO FONT SIZE 1.0 (scrolling only on 0.8) 
- 
-No arguments: all reactors, solars and batteries 
-First argument: filters blocks based on name 
- 
-[b]Example:[/b] 
-Power {Main Power} 
- 
-[h1]COMMAND: PowerSummary[/h1] 
-Same as Power, but displays only total power output. 
- 
-[b]Example:[/b] 
-PowerSummary {Main Power} 
- 
-[h1]COMMAND: Damage[/h1] 
-Displays damaged ship/station blocks 
-FONT SIZE 0.8 
- 
-No arguments: all blocks on ship/station 
-First argument: filters blocks based on name 
- 
-[b]Example:[/b] 
-Damage [SHIPYARD] 
- 
-[h1]COMMAND: BlockCount[/h1] 
-Displays number of blocks of specified type 
-Separates different sub types of blocks 
-UP TO FONT SIZE 1.0 (scrolling only on 0.8) 
- 
-No arguments: nothing will be displayed! 
-First argument: filters blocks based on name, still nothing displayed! 
-Following arguments: filter blocks based on type 
-[b]Use main block type name like:[/b] 
-reactor, thruster, container, refinery, assembler, etc 
-[b]Types separated by space or , but not both:[/b] 
-[b]GOOD:[/b] reactor,thruster container 
-[b]BAD:[/b] reactor, thruster, container 
- 
-[b]Example:[/b] 
-BlockCount * thruster,gyro,reactor,solar,battery 
- 
-[h1]COMMAND: EnabledCount[/h1] 
-Displays number of enabled blocks / total number of blocks of specified type. 
-Usage is same as BlockCount 
- 
-[h1]COMMAND: ProdCount[/h1] 
-Displays number of producing blocks / total number of blocks of specified type. 
-Usage is same as BlockCount 
- 
-[b]Example:[/b] 
-ProdCount * refinery,assembler 
- 
-[h1]COMMAND: Working[/h1] 
-Displays all blocks of specified type showing their enabled/working state. 
-State is one of ON/OFF (enabled), IDLE/WORK (producing) 
-Usage is same as BlockCount. 
- 
-[b]Example:[/b] 
-Working Red refinery,assembler 
- 
-[h1]COMMAND: Echo[/h1] 
-Displays single line of text 
-UP TO ANY FONT SIZE (scrolling only on 0.8) 
- 
-No arguments: empty line 
-Following arguments: text to be displayed 
- 
-[b]Examples:[/b] 
-Echo MMaster's Text Panel 
-Echo 
- 
-[h1]COMMAND: Time[/h1] 
-Displays single line of text followed by current time 
-UP TO ANY FONT SIZE (scrolling only on 0.8) 
- 
-No arguments: display only current time 
-Following arguments: text to be shown before the time 
- 
-[b]Example:[/b] 
-Time MMaster's Text Panel Time:  
- 
-[h1]Tips[/h1] 
-Use multiple programmable blocks with different LCD_TAG to split the work 
- 
-Name your LCD block like this: Text panel [LCD] #Heading 
-it will add the text after # as first line 
-Add spaces between # and text to move it right. 
-(Advanced) If you use more panels: 
- * script updates one panel per run 
- * modify PANELS_PER_STEP to update more panels in single run 
- * it adds complexity to the script 
- * DO NOT report problems with modified PANELS_PER_STEP 
-   
-[h1]Special Thanks[/h1] 
-bssespaceengineers.com - awesome server where I developed this script 
-Rhedd - for his contribution to modded items entries 
-*/
         // Use this tag to identify LCDs managed by this script 
         public static string LCD_TAG = "[LCD]";
         // How many lines to scroll per step 
@@ -465,7 +232,7 @@ Rhedd - for his contribution to modded items entries
         // number of panels processed in one step 
         public static int PANELS_PER_STEP = 2;
 
-        public MMBlockCollection textPanels = new MMBlockCollection();
+        public MMBlockCollection textPanels = new DBlockCollection();
 
         public LCDsProgram(string nameLike, int sps, int pps)
         {
@@ -550,7 +317,7 @@ Rhedd - for his contribution to modded items entries
         {
             bool enabledCnt = (cmd.command == "enabledcount");
             bool producingCnt = (cmd.command == "prodcount");
-            MMBlockCollection blocks = new MMBlockCollection();
+            MMBlockCollection blocks = new DBlockCollection();
             if (cmd.arguments.Count == 0)
                 blocks.Blocks = MM._GridTerminalSystem.Blocks;
 
@@ -566,7 +333,7 @@ Rhedd - for his contribution to modded items entries
                     MMBlockCollection f_blocks = blocks;
                     if (cmd.nameLike != "" && cmd.nameLike != "*")
                     {
-                        f_blocks = new MMBlockCollection();
+                        f_blocks = new DBlockCollection();
                         blocks.GetBlocksWithNameLike(f_blocks, cmd.nameLike);
                     }
 
@@ -631,7 +398,7 @@ Rhedd - for his contribution to modded items entries
 
         public void RunWorkingList(IMyTextPanel panel, MMCommand cmd)
         {
-            MMBlockCollection blocks = new MMBlockCollection();
+            MMBlockCollection blocks = new DBlockCollection();
             if (cmd.arguments.Count == 0)
                 blocks.Blocks = MM._GridTerminalSystem.Blocks;
 
@@ -647,7 +414,7 @@ Rhedd - for his contribution to modded items entries
                     MMBlockCollection f_blocks = blocks;
                     if (cmd.nameLike != "" && cmd.nameLike != "*")
                     {
-                        f_blocks = new MMBlockCollection();
+                        f_blocks = new DBlockCollection();
                         blocks.GetBlocksWithNameLike(f_blocks, cmd.nameLike);
                     }
 
@@ -701,7 +468,7 @@ Rhedd - for his contribution to modded items entries
 
         public void RunDamage(IMyTextPanel panel, MMCommand cmd)
         {
-            MMBlockCollection blocks = new MMBlockCollection();
+            MMBlockCollection blocks = new DBlockCollection();
 
             if (cmd.nameLike == "" || cmd.nameLike == "*")
                 blocks.Blocks = MM._GridTerminalSystem.Blocks;
@@ -736,7 +503,7 @@ Rhedd - for his contribution to modded items entries
 
         public void RunCargoStatus(IMyTextPanel panel, MMCommand cmd)
         {
-            MMBlockCollection blocks = new MMBlockCollection();
+            MMBlockCollection blocks = new DBlockCollection();
 
             if (cmd.nameLike == "" || cmd.nameLike == "*")
                 blocks.AddBlocksOfType(MM.CargoContainer);
@@ -812,9 +579,9 @@ Rhedd - for his contribution to modded items entries
 
         public void RunPowerStatus(IMyTextPanel panel, MMCommand cmd)
         {
-            MMBlockCollection reactors = new MMBlockCollection();
-            MMBlockCollection solars = new MMBlockCollection();
-            MMBlockCollection batteries = new MMBlockCollection();
+            MMBlockCollection reactors = new DBlockCollection();
+            MMBlockCollection solars = new DBlockCollection();
+            MMBlockCollection batteries = new DBlockCollection();
             int got = 0;
             bool issummary = (cmd.command == "powersummary");
 
@@ -859,7 +626,7 @@ Rhedd - for his contribution to modded items entries
             if (got == 1)
                 return;
 
-            MMBlockCollection blocks = new MMBlockCollection();
+            MMBlockCollection blocks = new DBlockCollection();
             blocks.AddFromCollection(reactors);
             blocks.AddFromCollection(solars);
             blocks.AddFromCollection(batteries);
@@ -965,7 +732,7 @@ Rhedd - for his contribution to modded items entries
 
         public void RunInvListing(IMyTextPanel panel, MMCommand cmd)
         {
-            MMBlockCollection blocks = new MMBlockCollection();
+            MMBlockCollection blocks = new DBlockCollection();
             bool missing = (cmd.command == "missing");
             bool simple = (cmd.command == "invlist");
 
@@ -1257,7 +1024,7 @@ Rhedd - for his contribution to modded items entries
             return result;
         }
 
-        public double GetPowerOutput(out double current, out double max)
+        public virtual double GetPowerOutput(out double current, out double max)
         {
             max = 0;
             current = 0;
@@ -1998,7 +1765,7 @@ Rhedd - for his contribution to modded items entries
             _GridTerminalSystem = gridSystem;
             EnableDebug = _EnableDebug;
 
-            _DebugTextPanels = new MMBlockCollection();
+            _DebugTextPanels = new DBlockCollection();
 
             MMStringFunc.InitCharSizes();
 
@@ -2781,9 +2548,15 @@ Rhedd - for his contribution to modded items entries
         }
     }
 
+
+
+    /*
+     * OVERLOADING CLASS
+     */
+
     public class DBlockCollection : MMBlockCollection {
         
-        public override List<double> GetDetailedInfoValues(IMyTerminalBlock block, string name = null)
+        public List<double> GetDetailedInfoValues(IMyTerminalBlock block, string name = null)
         {
             List<double> result = new List<double>();
 
